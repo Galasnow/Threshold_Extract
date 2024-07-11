@@ -1,0 +1,34 @@
+# path include ...MTL.txt and .tif
+path: D:/GIS/LE71190402001063EDC00/                       #Landsat7
+### path: D:/GIS/LC81190402021270LGN00/                     #Landsat8
+### path: D:/GIS/LC09_L2SP_119040_20230128_20230309_02_T1/  #Landsat9
+
+# name of ...MTL.txt
+mtl_txt: L71119040_04020010304_MTL.txt                          #Landsat7
+### mtl_txt: LC08_L1TP_119040_20210927_20211001_01_T1_MTL.txt     #Landsat8
+### mtl_txt: LC09_L2SP_119040_20230128_20230309_02_T1_MTL.txt     #Landsat9
+
+# the index used to calculate
+# choices=['NDWI', 'MNDWI', 'AWEI-nsh', 'AWEI-sh']
+index: MNDWI
+
+# the method used to evaluation
+# choices=['F-Measure', 'E-Measure']
+evaluation_method: F-Measure
+
+# (optional) the range of threshold, format [min, max]
+# default is [index_min, index_max]
+threshold_range: 
+
+# (optional) the final precision of threshold search
+# default is (threshold_range[1] - threshold_range[0]) / 1000
+final_precision: 1.0e-4
+
+# (optional) the number of precess in multiprocessing
+# default is 2
+cores: 5
+
+# (optional) beta_sq = beta ** 2 in 'F-Measure'
+# default is 0.3
+F-Measure:
+  beta_sq: 0.3
