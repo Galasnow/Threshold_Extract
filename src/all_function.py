@@ -236,10 +236,9 @@ def OTSU(gray_img: np.ndarray, effective_region: np.ndarray[np.bool_], step_size
     threshold_list = np.arange(threshold_range[0], threshold_range[1], step_size)
 
     num = len(threshold_list)
-    gray_level0 = np.zeros(num, dtype=runtime_data_type)
-    gray_level1 = np.zeros(num, dtype=runtime_data_type)
-    w0 = np.zeros(num, dtype=runtime_data_type)
-    w1 = np.zeros(num, dtype=runtime_data_type)
+    gray_level0 = np.zeros(num, dtype=np.float32)
+    gray_level1 = np.zeros(num, dtype=np.float32)
+    w0 = np.zeros(num, dtype=np.float32)
 
     effective_count = np.sum(effective_region)
     #
@@ -263,7 +262,7 @@ def OTSU(gray_img: np.ndarray, effective_region: np.ndarray[np.bool_], step_size
 
     w1 = 1 - w0
     # var
-    var = np.array(w0 * w1 * (gray_level0 - gray_level1) ** 2).astype(runtime_data_type)
+    var = np.array(w0 * w1 * (gray_level0 - gray_level1) ** 2).astype(np.float32)
     result = []
 
     for i in range(0, num):
