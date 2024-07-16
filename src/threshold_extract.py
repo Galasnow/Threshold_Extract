@@ -326,8 +326,7 @@ if __name__ == '__main__':
 
     # binarization
     otsu_img = index_array.copy()
-    otsu_img[otsu_img < best_threshold] = 0
-    otsu_img[otsu_img >= best_threshold] = 255
+    otsu_img = (otsu_img > best_threshold).astype(np.bool_) * 255
     otsu_img.astype(np.uint8)
 
     if output_flag:
