@@ -1,4 +1,5 @@
 import re
+import warnings
 import numpy as np
 from osgeo import gdal
 
@@ -15,7 +16,7 @@ class Landsat:
         self.input_path = _input_path
         self.mtl_txt = _mtl_txt
         self.dataset_type = None
-        self.dataset_level = 'L1'
+        self.dataset_level = None
         self.tiff_size = None
         self.geoTransform = None
         self.projection = None
@@ -34,6 +35,7 @@ class Landsat:
                 self.dataset_type = dataset_type_select.group(1)
                 match self.dataset_type:
                     case 'LANDSAT_5' | 'Landsat7':
+                    case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
                         self.band_info_list = ['1', '2', '3', '4', '5', '7']
                     case 'LANDSAT_8' | 'LANDSAT_9':
                         self.band_info_list = ['1', '2', '3', '4', '5', '6', '7']
@@ -42,10 +44,31 @@ class Landsat:
                         exit(-1)
                 break
 
+        # Get dataset_level
+        # PRODUCT_TYPE or PROCESSING_LEVEL = "L1T" or "L2SP"
+        pattern = r'.*[EL] = "L([12])[ST]"'
+        for ele in data:
+            dataset_level_select = re.search(pattern, ele)
+            if dataset_level_select:
+                print(dataset_level_select)
+                dataset_level = dataset_level_select.group(1)
+                match dataset_level:
+                    case '1':
+                        self.dataset_level = 1
+                        warnings.warn('Use Level 1 data may be not accurate. Consider to use Level 2 data instead.',
+                                      category=RuntimeWarning)
+                    case '2':
+                        self.dataset_level = 2
+                    case _:
+                        raise RuntimeError('Unknown dataset level!')
+                # Finish search of dataset level
+                break
+        print(self.dataset_level)
+
         for i in self.band_info_list:
             for ele in data:
                 match self.dataset_type:
-                    case 'LANDSAT_5' | 'LANDSAT_8' | 'LANDSAT_9':
+                    case 'LANDSAT_5' | 'LANDSAT_7' | 'LANDSAT_8' | 'LANDSAT_9':
                         pattern = r'FILE_NAME_BAND_' + i + ' = "(.*)"'
                     case 'Landsat7':
                         pattern = r'BAND' + i + '_FILE_NAME = "(.*)"'

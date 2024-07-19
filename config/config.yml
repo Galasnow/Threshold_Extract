@@ -1,12 +1,14 @@
 # path include ...MTL.txt and .tif
-path: D:/GIS/LE71190402001063EDC00/                       #Landsat7
-### path: D:/GIS/LC81190402021270LGN00/                     #Landsat8
-### path: D:/GIS/LC09_L2SP_119040_20230128_20230309_02_T1/  #Landsat9
+### path: D:/ZYZ/GIS/LE71190402001063EDC00/                       #Landsat7 L1
+path: D:/ZYZ/GIS/LE07_L2SP_119040_20020307_20200916_02_T1/        #Landsat7 L2
+### path: D:/GIS/LC81190402021270LGN00/                           #Landsat8 L1
+### path: D:/GIS/LC09_L2SP_119040_20230128_20230309_02_T1/        #Landsat9 L2
 
 # name of ...MTL.txt
-mtl_txt: L71119040_04020010304_MTL.txt                          #Landsat7
-### mtl_txt: LC08_L1TP_119040_20210927_20211001_01_T1_MTL.txt     #Landsat8
-### mtl_txt: LC09_L2SP_119040_20230128_20230309_02_T1_MTL.txt     #Landsat9
+### mtl_txt: L71119040_04020010304_MTL.txt                        #Landsat7 L1
+mtl_txt: LE07_L2SP_119040_20020307_20200916_02_T1_MTL.txt         #Landsat7 L2
+### mtl_txt: LC08_L1TP_119040_20210927_20211001_01_T1_MTL.txt     #Landsat8 L1
+### mtl_txt: LC09_L2SP_119040_20230128_20230309_02_T1_MTL.txt     #Landsat9 L2
 
 # the index used to calculate
 # choices=['NDWI', 'MNDWI', 'AWEI-nsh', 'AWEI-sh']

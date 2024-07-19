@@ -70,13 +70,16 @@ if __name__ == '__main__':
     # Set the true value of water. Temporarily use manual setting instead.
     match landsat_obj.dataset_type:
         case 'Landsat7':
-            # For Landsat7 Testcase
+            # For Landsat7 L1 Testcase
             value = binarization(mydwi_array, 0.199)
+        case 'LANDSAT_7':
+            # For Landsat7 L2 Testcase
+            value = binarization(mydwi_array, -0.2042)
         case 'LANDSAT_8':
-            # For Landsat7 Testcase
+            # For Landsat8 Testcase
             value = binarization(mydwi_array, -0.075)
         case 'LANDSAT_9':
-            # For Landsat7 Testcase
+            # For Landsat9 Testcase
             value = binarization(mydwi_array, -0.2051)
         case _:
             exit(-1)
@@ -99,7 +102,7 @@ if __name__ == '__main__':
     mask = np.zeros_like(index_array, dtype=np.bool_)
     # Set value of interested area to 1. Temporarily use manual setting instead.
     match landsat_obj.dataset_type:
-        case 'Landsat7':
+        case 'Landsat7' | 'LANDSAT_7':
             # For Landsat7 Testcase
             mask[100:1600, 1400:2700] = np.ones((1500, 1300), dtype=np.bool_)
             mask[2000:3000, 2700:3700] = np.ones((1000, 1000), dtype=np.bool_)

@@ -44,7 +44,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
             # Calculate Normalized Difference Water Index (NDWI)
             # MNDWI = (Green - NIR) / (Green + NIR)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7':
+                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
                     numerate = bands[1] - bands[3]
                     denominator = bands[1] + bands[3]
                 case 'LANDSAT_8' | 'LANDSAT_9':
@@ -62,7 +62,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
             # Calculate Modified Normalized Difference Water Index (MNDWI)
             # MNDWI = (Green - MIR) / (Green + MIR)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7':
+                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
                     numerate = bands[1] - bands[4]
                     denominator = bands[1] + bands[4]
                 case 'LANDSAT_8' | 'LANDSAT_9':
@@ -79,7 +79,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
             # https://doi.org/10.1016/j.rse.2013.08.029.
             # Calculate Automated Water Extraction Index (AWEI) (no shadow version)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7':
+                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
                     index_value = 4 * bands[1] - 0.25 * bands[3] - 4 * bands[4] + 2.75 * bands[5]
                     result = np.where(effective_region, index_value, np.inf)
                 case 'LANDSAT_8' | 'LANDSAT_9':
@@ -92,7 +92,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
         case 'AWEI-sh':
             # Calculate Automated Water Extraction Index (AWEI) (shadow version)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7':
+                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
                     index_value = bands[0] + 2.5 * bands[1] - 1.5 * bands[3] - 1.5 * bands[4] - 0.25 * bands[5]
                     result = np.where(effective_region, index_value, np.inf)
                 case 'LANDSAT_8' | 'LANDSAT_9':
@@ -105,7 +105,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
         case 'MyDWI':
             # Calculate My Difference Water Index (MyDWI)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7':
+                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
                     numerate = bands[0] + bands[1] - bands[3] - bands[4] - bands[5]
                     denominator = bands[0] + bands[1] + bands[3] + bands[4] + bands[5]
                 case 'LANDSAT_8' | 'LANDSAT_9':
