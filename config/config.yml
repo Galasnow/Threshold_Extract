@@ -13,7 +13,7 @@ mtl_txt: L71119040_04020010304_MTL.txt                          #Landsat7
 index: MNDWI
 
 # the method used to evaluation
-# choices=['F-Measure', 'E-Measure']
+# choices=['F-Measure', 'E-Measure', 'Kappa']
 evaluation_method: F-Measure
 
 # (optional) the range of threshold, format [min, max]

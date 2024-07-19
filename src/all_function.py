@@ -213,6 +213,14 @@ def saliency_evaluation(image: np.ndarray, value: np.ndarray, mask: np.ndarray, 
 
                 measure = np.sum(enhanced_matrix) / (element_count - 1 + np.finfo(runtime_data_type).eps)
 
+            case 'Kappa':
+                # https://doi.org/10.1177%2F001316446002000104
+                element_count = np.sum(mask)
+                tn = element_count - tp - fn - fp
+                p0 = (tp + tn) / element_count
+                pe = ((tp + fp) * (tp + fn) + (fn + tn) * (fp + tn)) / (element_count * element_count)
+                measure = (p0 - pe) / (1 - pe)
+
             # TODO
             # 'IOU', 'GIOU', 'CIOU', '  CM', 'FBw', 'VQ', 'S-Measure' ...
             case _:
