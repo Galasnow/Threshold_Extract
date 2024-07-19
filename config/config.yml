@@ -23,10 +23,10 @@ evaluation_method: F-Measure
 threshold_range: 
 
 # (optional) the final precision of threshold search
-# default is (threshold_range[1] - threshold_range[0]) / 1000
+# default is (threshold_range[1] - threshold_range[0]) / 100
 final_precision: 1.0e-4
 
-# (optional) the number of precess in multiprocessing
+# (optional) the number of process in multiprocessing
 # default is 2
 cores: 5
 

@@ -1,5 +1,6 @@
 import time
 from typing import Callable
+import warnings
 
 import yaml
 import numpy as np
@@ -51,8 +52,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
                     numerate = bands[2] - bands[4]
                     denominator = bands[2] + bands[4]
                 case _:
-                    print('unknown dataset type!')
-                    exit(-1)
+                    raise RuntimeError('Unknown dataset type!')
 
             result = np.divide(numerate, denominator, out=np.full_like(denominator, np.inf, dtype=runtime_data_type),
                                where=effective_region)
@@ -69,14 +69,13 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
                     numerate = bands[2] - bands[5]
                     denominator = bands[2] + bands[5]
                 case _:
-                    print('unknown dataset type!')
-                    exit(-1)
+                    raise RuntimeError('Unknown dataset type!')
 
             result = np.divide(numerate, denominator, out=np.full_like(denominator, np.inf, dtype=runtime_data_type),
                                where=effective_region)
 
         case 'AWEI-nsh':
-            # https://doi.org/10.1016/j.rse.2013.08.029.
+            # https://doi.org/10.1016/j.rse.2013.08.029
             # Calculate Automated Water Extraction Index (AWEI) (no shadow version)
             match dataset_type:
                 case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
@@ -86,8 +85,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
                     index_value = 4 * bands[2] - 0.25 * bands[4] - 4 * bands[5] + 2.75 * bands[6]
                     result = np.where(effective_region, index_value, np.inf)
                 case _:
-                    print('unknown dataset type!')
-                    exit(-1)
+                    raise RuntimeError('Unknown dataset type!')
 
         case 'AWEI-sh':
             # Calculate Automated Water Extraction Index (AWEI) (shadow version)
@@ -99,8 +97,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
                     index_value = bands[1] + 2.5 * bands[2] - 1.5 * bands[4] - 1.5 * bands[5] - 0.25 * bands[6]
                     result = np.where(effective_region, index_value, np.inf)
                 case _:
-                    print('unknown dataset type!')
-                    exit(-1)
+                    raise RuntimeError('Unknown dataset type!')
 
         case 'MyDWI':
             # Calculate My Difference Water Index (MyDWI)
@@ -112,16 +109,14 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
                     numerate = bands[1] + bands[2] - bands[4] - bands[5] - bands[6]
                     denominator = bands[1] + bands[2] + bands[4] + bands[5] + bands[6]
                 case _:
-                    print('unknown dataset type!')
-                    exit(-1)
+                    raise RuntimeError('unknown dataset type!')
 
             result = np.divide(numerate, denominator, out=np.full_like(denominator, np.inf, dtype=runtime_data_type),
                                where=effective_region)
         case _:
-            print('unknown index!')
-            exit(-1)
+            raise NotImplementedError('Unsupported index!')
 
-    # record minimum first,
+    # Record minimum first,
     # avoid following search of minimum under the interference of background(-(abs(result_min)*100))
     result_min = result.min()
     background_value = -(abs(result_min) * 100)
@@ -142,9 +137,7 @@ def range_divide(threshold_range: Sequence, number: int) -> list:
     bottom = threshold_range[0]
     top = threshold_range[1]
     length = (top - bottom) / number
-    range_list = []
-    for i in np.linspace(bottom, top, number, endpoint=False):
-        range_list.append([i, i + length])
+    range_list = [[i, i+length] for i in np.linspace(bottom, top, number, endpoint=False)]
     if debug_print_flag:
         print('range_list = ', range_list)
     return range_list
@@ -180,13 +173,9 @@ def saliency_evaluation(image: np.ndarray, value: np.ndarray, mask: np.ndarray, 
         precision = np.divide(tp, tp + fp, where=((tp + fp) != 0))
         recall = np.divide(tp, tp + fn, where=((tp + fn) != 0))
 
-        if debug_print_flag:
-            print('Precision = ', precision)
-            print('Recall = ', recall)
-
         match method:
             case 'F-Measure':
-                # https://doi.org/10.1016/j.rse.2013.08.029
+                # Cornelius J. Van Rijsbergen. 1979. Information Retrieval. Butterworth and Co., London.
                 # beta_sq = beta ** 2
                 numerate = (1 + beta_sq) * precision * recall
                 denominator = beta_sq * precision + recall
@@ -222,13 +211,14 @@ def saliency_evaluation(image: np.ndarray, value: np.ndarray, mask: np.ndarray, 
                 measure = (p0 - pe) / (1 - pe)
 
             # TODO
-            # 'IOU', 'GIOU', 'CIOU', '  CM', 'FBw', 'VQ', 'S-Measure' ...
+            # 'CM', 'FBw', 'VQ', 'S-Measure' ...
             case _:
-                print('Unsupported evaluation method!')
-                exit(-1)
+                raise NotImplementedError('Unsupported evaluation method!')
 
         if debug_print_flag:
             print('threshold = ', threshold)
+            print('Precision = ', precision)
+            print('Recall = ', recall)
             print(method, ' = ', measure)
 
         result_list.append([threshold, precision, recall, measure])
@@ -243,7 +233,7 @@ def OTSU(gray_img: np.ndarray, effective_region: np.ndarray[np.bool_], step_size
 
     threshold_list = np.arange(threshold_range[0], threshold_range[1], step_size)
 
-    num = len(threshold_list)
+    num = threshold_list.size
     gray_level0 = np.zeros(num, dtype=np.float32)
     gray_level1 = np.zeros(num, dtype=np.float32)
     w0 = np.zeros(num, dtype=np.float32)
@@ -262,20 +252,20 @@ def OTSU(gray_img: np.ndarray, effective_region: np.ndarray[np.bool_], step_size
         gray_level1[i] = np.mean(gray_img[gray_level1_position])
         i += 1
 
+    # background / (foreground + background)
+    w1 = 1 - w0
+    # Var
+    var = np.array(w0 * w1 * (gray_level0 - gray_level1) ** 2).astype(np.float32)
+    var = np.nan_to_num(var, nan=0)
+
+    result = [[threshold_list[i], var[i]] for i in range(0, num)]
+
     if debug_print_flag:
+        print('w0 =', w0)
+        print('w1 =', w1)
         print('gray_level0 =', gray_level0)
         print('gray_level1 =', gray_level1)
-
-    w1 = 1 - w0
-    # var
-    var = np.array(w0 * w1 * (gray_level0 - gray_level1) ** 2).astype(np.float32)
-    result = []
-
-    for i in range(0, num):
-        result.append([threshold_list[i], var[i]])
-
-    if debug_print_flag:
-        print(result)
+        print('result =', result)
 
     return result
 
@@ -284,7 +274,7 @@ def draw_box(image: np.ndarray, top: int, bottom: int, left: int, right: int, ha
     size = image.shape
     if ((bottom + half_width > size[0]) or (right + half_width > size[1])
             or (left - half_width < 0) or (top - half_width < 0)):
-        print('exceed boundary!')
+        warnings.warn('exceed boundary!', category=RuntimeWarning)
         return image
     image[top: bottom, :][:, left - half_width:left + half_width] = value
     image[top: bottom, :][:, right - half_width:right + half_width] = value

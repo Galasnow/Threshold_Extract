@@ -28,20 +28,20 @@ class Landsat:
         with open(self.input_path + f'/{self.mtl_txt}', 'r') as mtl_file:
             data = mtl_file.readlines()
 
+        # Get dataset_type
+        pattern = r'SPACECRAFT_ID = "(.*)"'
         for ele in data:
-            pattern = r'SPACECRAFT_ID = "(.*)"'
             dataset_type_select = re.search(pattern, ele)
             if dataset_type_select:
                 self.dataset_type = dataset_type_select.group(1)
                 match self.dataset_type:
-                    case 'LANDSAT_5' | 'Landsat7':
                     case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
                         self.band_info_list = ['1', '2', '3', '4', '5', '7']
                     case 'LANDSAT_8' | 'LANDSAT_9':
                         self.band_info_list = ['1', '2', '3', '4', '5', '6', '7']
                     case _:
-                        print('unknown dataset type!')
-                        exit(-1)
+                        raise RuntimeError('Unknown dataset type!')
+                # Finish search of dataset type
                 break
 
         # Get dataset_level
@@ -65,6 +65,7 @@ class Landsat:
                 break
         print(self.dataset_level)
 
+        # Get needed tif data
         for i in self.band_info_list:
             for ele in data:
                 match self.dataset_type:
@@ -72,9 +73,6 @@ class Landsat:
                         pattern = r'FILE_NAME_BAND_' + i + ' = "(.*)"'
                     case 'Landsat7':
                         pattern = r'BAND' + i + '_FILE_NAME = "(.*)"'
-                    case _:
-                        print('unknown dataset type!')
-                        exit(-1)
                 band_select = re.search(pattern, ele)
                 if band_select:
                     with gdal.Open(self.input_path + f'/{band_select.group(1)}') as tiff_select:
@@ -84,9 +82,10 @@ class Landsat:
                             self.geoTransform = tiff_select.GetGeoTransform()
                             self.projection = tiff_select.GetProjection()
                             self.tiff_size = [tiff_select.RasterXSize, tiff_select.RasterYSize]
-                        band_effective_region = (band_select_array != 0)
+                        band_effective_region = np.array(band_select_array != 0)
                         if self.effective_region is None:
                             self.effective_region = band_effective_region
                         else:
                             self.effective_region = np.logical_and(self.effective_region, band_effective_region)
+                    # Search next band
                     break

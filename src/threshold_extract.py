@@ -10,8 +10,6 @@ from osgeo import gdal
 from landsat_class import Landsat
 from all_function import *
 
-# import tifffile
-
 # import pycuda
 # conda install pycuda
 
@@ -82,12 +80,11 @@ if __name__ == '__main__':
             # For Landsat9 Testcase
             value = binarization(mydwi_array, -0.2051)
         case _:
-            exit(-1)
+            raise RuntimeError('Unknown dataset type!')
 
-    # gc
+    # Manually gc to free memory
     del landsat_obj.bands, mydwi_array
     gc.collect()
-    # TODO set bands ass 'weakref'
 
     if draw_image_flag:
         # Histogram
@@ -121,7 +118,7 @@ if __name__ == '__main__':
             mask[3000:4200, 4800:5700] = np.ones((1200, 900), dtype=np.bool_)
             mask[4800:7000, 2500:3800] = np.ones((2200, 1300), dtype=np.bool_)
         case _:
-            exit(-1)
+            raise RuntimeError('Unknown dataset type!')
 
     time_start = time.time()
 
@@ -133,7 +130,7 @@ if __name__ == '__main__':
 
     # Define the number of process in multiprocessing. This number should change according to final precision,
     # decreasing step_size means heavier task, and then increasing cores may speed up the total task.
-    # Normally, suitable number is 2 to 6
+    # Normally, suitable number may be 2 to 6
     if cores is None:
         cores = 2
 
@@ -182,7 +179,6 @@ if __name__ == '__main__':
         max_measure = np.max(result_list[:, 3])
         print('max', evaluation_method, ' = ', max_measure)
         max_index = np.argmax(result_list[:, 3])
-        # print('max_index = ', max_index)
         best_threshold = result_list[max_index, 0]
         print('best_threshold = ', best_threshold)
 
@@ -197,7 +193,7 @@ if __name__ == '__main__':
     result_list_all = result_list_all[result_index, :]
     # print('result_list_all = ', result_list_all)
 
-    # Binarization according to the best result
+    # Binarization according to the best threshold
     index_array_bin = binarization(index_array, best_threshold)
 
     # # For Landsat7 Testcase
@@ -212,7 +208,7 @@ if __name__ == '__main__':
         # Create window and show image
         show = index_array_bin.astype(np.float32)
 
-        # Draw mask box
+        # # Draw mask box
         # top = 4800
         # bottom = 7000
         # left = 2500
@@ -259,7 +255,7 @@ if __name__ == '__main__':
         plt.ylim(0, 1)  # set range of axis y
         plt.show()
 
-    # compare the result with global OTSU
+    # Compare the result with global OTSU threshold
     # OTSU ####################################################################
     time_start = time.time()
 
@@ -327,12 +323,11 @@ if __name__ == '__main__':
     time_end = time.time()
     print('OTSU time is : ' + str(time_end - time_start) + ' s')
 
-    # binarization
-    otsu_img = index_array.copy()
-    otsu_img = (otsu_img > best_threshold).astype(np.bool_) * 255
-    otsu_img.astype(np.uint8)
+    # Binarization
+    otsu_img = binarization(index_array, best_threshold) * 255
 
     if output_flag:
+        otsu_img.astype(np.uint8)
         cv.imwrite(input_path + f'/{index}' + '_OTSU.jpg', otsu_img, [int(cv.IMWRITE_JPEG_QUALITY), 100])
 
     if draw_image_flag:
@@ -342,7 +337,7 @@ if __name__ == '__main__':
         cv.imshow('OTSU_image', show)
         # Press 'X' to close and continue
         while cv.getWindowProperty('OTSU_image', cv.WND_PROP_VISIBLE) > 0:
-            # show image repeatedly for 100ms
+            # Show image repeatedly for 100ms
             cv.waitKey(100)
         else:
             # Release window
