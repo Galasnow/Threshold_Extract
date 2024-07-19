@@ -252,14 +252,12 @@ def OTSU(gray_img: np.ndarray, effective_region: np.ndarray[np.bool_], step_size
     #
     i = 0
     for threshold in threshold_list:
-        # mean of foreground
-        gray_level0_position = np.logical_and((gray_img > threshold), effective_region)
-        # foreground/(foreground+background)
-        w0[i] = np.shape(gray_img[gray_level0_position])[0] / effective_count
-
-        # mean of background
-        gray_level1_position = np.logical_and((gray_img <= threshold), effective_region)
-
+        # locate gray level 0/1 position
+        gray_level0_position = (gray_img > threshold)
+        gray_level1_position = np.logical_xor(gray_level0_position, effective_region)
+        # foreground / (foreground + background)
+        w0[i] = np.sum(gray_level0_position) / effective_count
+        # Mean of foreground and background
         gray_level0[i] = np.mean(gray_img[gray_level0_position])
         gray_level1[i] = np.mean(gray_img[gray_level1_position])
         i += 1
