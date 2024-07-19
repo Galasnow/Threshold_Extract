@@ -45,17 +45,17 @@ class Landsat:
                 break
 
         # Get dataset_level
-        # PRODUCT_TYPE or PROCESSING_LEVEL = "L1T" or "L2SP"
-        pattern = r'.*[EL] = "L([12])[ST]"'
+        # DATA_TYPE or PRODUCT_TYPE or PROCESSING_LEVEL = "L1T" or "L1TP" or "L2SP"
+        pattern = r'.* = "L([12])[ST]P?"'
         for ele in data:
             dataset_level_select = re.search(pattern, ele)
             if dataset_level_select:
-                print(dataset_level_select)
                 dataset_level = dataset_level_select.group(1)
                 match dataset_level:
                     case '1':
                         self.dataset_level = 1
-                        warnings.warn('Use Level 1 data may be not accurate. Consider to use Level 2 data instead.',
+                        warnings.warn('Using Level 1 data may be not accurate. '
+                                      'Consider to use Level 2 data instead.',
                                       category=RuntimeWarning)
                     case '2':
                         self.dataset_level = 2
@@ -63,7 +63,6 @@ class Landsat:
                         raise RuntimeError('Unknown dataset level!')
                 # Finish search of dataset level
                 break
-        print(self.dataset_level)
 
         # Get needed tif data
         for i in self.band_info_list:
