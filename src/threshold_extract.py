@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     if draw_image_flag:
         # Histogram
-        index_1d = index_array.reshape(-1)
+        index_1d = index_array[landsat_obj.effective_region]
         plt.hist(index_1d, bins=500, range=index_range, histtype='step')
         plt.title('Histogram')
         plt.xlabel('value')

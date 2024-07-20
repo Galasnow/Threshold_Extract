@@ -146,20 +146,29 @@ def range_divide(threshold_range: Sequence, number: int) -> list:
 def saliency_evaluation(image: np.ndarray, value: np.ndarray, mask: np.ndarray, step_size, method: str,
                         threshold_range: Sequence,
                         beta_sq=0.3):
+    """
+    image: array of index
+    value: ground truth
+    mask: region of interest (ROI)
+    """
+    # Move operation of "value" outside for loop to speed up
+    # Intersection
+    mask_value = np.logical_and(value, mask)
+    # Sum the elements equal to 'True'
+    num2 = np.sum(mask_value)  # TP+FN
+
     result_list = []
     for threshold in np.arange(threshold_range[0], threshold_range[1], step_size):
 
         binary_image = binarization(image, threshold)
 
-        # Ues logical operation seems faster and consumes less memory than multiply and bitwise_and
+        # Intersection. Logical operation seems faster and consumes less memory than multiply and bitwise_and
         mask_image = np.logical_and(binary_image, mask)
-        mask_value = np.logical_and(value, mask)
         intersect_result = np.logical_and(mask_image, mask_value)
 
         # Sum the elements equal to 'True'
         num0 = np.sum(intersect_result)  # TP
         num1 = np.sum(mask_image)  # TP+FP
-        num2 = np.sum(mask_value)  # TP+FN
 
         if debug_print_flag:
             print('num0 = ', num0)
