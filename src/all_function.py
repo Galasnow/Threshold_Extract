@@ -143,6 +143,21 @@ def range_divide(threshold_range: Sequence, number: int) -> list:
     return range_list
 
 
+def range_intersect(range_1: Sequence, range_2: Sequence):
+    """
+        Return intersection of 2 ranges
+        Examples:
+            range_1 = [1, 3]
+            range_2 = [0, 2]
+            return [1, 2]
+    """
+    out_range_min = max(range_1[0], range_2[0])
+    out_range_max = min(range_1[1], range_2[1])
+    if out_range_min > out_range_max:
+        raise RuntimeError('Given threshold range is completely out of range of water index!')
+    return [out_range_min, out_range_max]
+
+
 def saliency_evaluation(image: np.ndarray, value: np.ndarray, mask: np.ndarray, step_size, method: str,
                         threshold_range: Sequence,
                         beta_sq=0.3):

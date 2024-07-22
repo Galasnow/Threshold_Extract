@@ -126,7 +126,7 @@ if __name__ == '__main__':
     if threshold_range is None:
         threshold_range = index_range
     else:
-        threshold_range = [max(threshold_range[0], index_range[0]), min(threshold_range[1], index_range[1])]
+        threshold_range = range_intersect(threshold_range, index_range)
 
     # Define the number of process in multiprocessing. This number should change according to final precision,
     # decreasing step_size means heavier task, and then increasing cores may speed up the total task.
@@ -159,7 +159,9 @@ if __name__ == '__main__':
         else:
             # best_threshold is last best_threshold
             # half_interval is last step_size * 2
-            threshold_range_iter = [best_threshold - half_interval, best_threshold + half_interval]
+            threshold_range_iter = range_intersect(
+                [best_threshold - half_interval, best_threshold + half_interval],
+                index_range)
         print('threshold_range = ', threshold_range_iter)
         print('step_size = ', step_size)
 
@@ -286,7 +288,9 @@ if __name__ == '__main__':
         else:
             # best_threshold is last best_threshold
             # half_interval is last step_size * 2
-            threshold_range_iter = [best_threshold - half_interval, best_threshold + half_interval]
+            threshold_range_iter = range_intersect(
+                [best_threshold - half_interval, best_threshold + half_interval],
+                index_range)
         print('threshold_range = ', threshold_range_iter)
         print('step_size = ', step_size)
 
