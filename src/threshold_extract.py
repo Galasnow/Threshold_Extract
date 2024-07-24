@@ -66,21 +66,24 @@ if __name__ == '__main__':
     _, mydwi_array = water_index(landsat_obj.bands, 'MyDWI', landsat_obj.dataset_type,
                                  landsat_obj.effective_region)
     # Set the true value of water. Temporarily use manual setting instead.
-    match landsat_obj.dataset_type:
-        case 'Landsat7':
-            # For Landsat7 L1 Testcase
-            value = binarization(mydwi_array, 0.199)
-        case 'LANDSAT_7':
-            # For Landsat7 L2 Testcase
-            value = binarization(mydwi_array, -0.2042)
-        case 'LANDSAT_8':
-            # For Landsat8 Testcase
-            value = binarization(mydwi_array, -0.075)
-        case 'LANDSAT_9':
-            # For Landsat9 Testcase
-            value = binarization(mydwi_array, -0.2051)
-        case _:
-            raise RuntimeError('Unknown dataset type!')
+    match (landsat_obj.dataset_type, landsat_obj.dataset_level):
+        # Test case, not accurate
+        case('LANDSAT_5', 'L1'):
+            value = binarization(mydwi_array, 0.11)
+        case('LANDSAT_5', 'L2'):
+            value = binarization(mydwi_array, -0.24)
+        case ('LANDSAT_7', 'L1'):
+            value = binarization(mydwi_array, 0.06)
+        case ('LANDSAT_7', 'L2'):
+            value = binarization(mydwi_array, -0.23)
+        case ('LANDSAT_8', 'L1'):
+            value = binarization(mydwi_array, 0.42)
+        case ('LANDSAT_8', 'L2'):
+            value = binarization(mydwi_array, -0.25)
+        case ('LANDSAT_9', 'L1'):
+            value = binarization(mydwi_array, 0.36)
+        case ('LANDSAT_9', 'L2'):
+            value = binarization(mydwi_array, -0.13)
 
     # Manually gc to free memory
     del landsat_obj.bands, mydwi_array
@@ -99,26 +102,29 @@ if __name__ == '__main__':
     mask = np.zeros_like(index_array, dtype=np.bool_)
     # Set value of interested area to 1. Temporarily use manual setting instead.
     match landsat_obj.dataset_type:
-        case 'Landsat7' | 'LANDSAT_7':
-            # For Landsat7 Testcase
+        # Test case
+        case 'LANDSAT_5':
+            mask[100:1600, 1400:2700] = np.ones((1500, 1300), dtype=np.bool_)
+            mask[2000:3000, 2700:3700] = np.ones((1000, 1000), dtype=np.bool_)
+            mask[2800:3800, 5100:5900] = np.ones((1000, 800), dtype=np.bool_)
+            mask[4300:5700, 5500:6500] = np.ones((1400, 1000), dtype=np.bool_)
+        case 'LANDSAT_7':
             mask[100:1600, 1400:2700] = np.ones((1500, 1300), dtype=np.bool_)
             mask[2000:3000, 2700:3700] = np.ones((1000, 1000), dtype=np.bool_)
             mask[2500:4000, 5500:6500] = np.ones((1500, 1000), dtype=np.bool_)
             mask[2800:4000, 4800:5800] = np.ones((1200, 1000), dtype=np.bool_)
         case 'LANDSAT_8':
-            # For Landsat8 Testcase
             mask[200:2000, 1300:2500] = np.ones((1800, 1200), dtype=np.bool_)
             mask[2000:3400, 2400:3200] = np.ones((1400, 800), dtype=np.bool_)
             mask[3000:4200, 4800:5600] = np.ones((1200, 800), dtype=np.bool_)
             mask[4800:7000, 2500:3800] = np.ones((2200, 1300), dtype=np.bool_)
         case 'LANDSAT_9':
-            # For Landsat9 Testcase
             mask[300:1800, 1300:2500] = np.ones((1500, 1200), dtype=np.bool_)
             mask[2000:3400, 2400:3200] = np.ones((1400, 800), dtype=np.bool_)
             mask[3000:4200, 4800:5700] = np.ones((1200, 900), dtype=np.bool_)
             mask[4800:7000, 2500:3800] = np.ones((2200, 1300), dtype=np.bool_)
-        case _:
-            raise RuntimeError('Unknown dataset type!')
+
+    mask = np.logical_and(mask, landsat_obj.effective_region)
 
     time_start = time.time()
 
@@ -198,11 +204,6 @@ if __name__ == '__main__':
     # Binarization according to the best threshold
     index_array_bin = binarization(index_array, best_threshold)
 
-    # # For Landsat7 Testcase
-    # index_array = binarization(index_array, 0.2706)
-    # # For Landsat8 Testcase
-    # index_array = binarization(index_array, 0.12)
-
     time_end = time.time()
     print('threshold extraction time is : ' + str(time_end - time_start) + ' s')
 
@@ -273,6 +274,7 @@ if __name__ == '__main__':
     iterations = int(np.log10(multiple)) + 1
     # [primary_step_size, final_step_size]
     step_size_l = np.logspace(np.log10(primary_step_size), np.log10(final_precision), iterations)
+    print('\n', '#####OTSU#####')
     print('step_size_l = ', step_size_l)
 
     # Iteration. In every iteration, set [best_threshold - half_interval, best_threshold + half_interval] as new range,

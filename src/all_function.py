@@ -6,7 +6,7 @@ import yaml
 import numpy as np
 from typing import Sequence
 
-runtime_data_type = np.float16
+runtime_data_type = np.float32
 debug_print_flag = 0
 
 
@@ -43,9 +43,9 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
         case 'NDWI':
             # https://doi.org/10.1080/01431169608948714
             # Calculate Normalized Difference Water Index (NDWI)
-            # MNDWI = (Green - NIR) / (Green + NIR)
+            # NDWI = (Green - NIR) / (Green + NIR)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
+                case 'LANDSAT_5' | 'LANDSAT_7':
                     numerate = bands[1] - bands[3]
                     denominator = bands[1] + bands[3]
                 case 'LANDSAT_8' | 'LANDSAT_9':
@@ -62,7 +62,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
             # Calculate Modified Normalized Difference Water Index (MNDWI)
             # MNDWI = (Green - MIR) / (Green + MIR)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
+                case 'LANDSAT_5' | 'LANDSAT_7':
                     numerate = bands[1] - bands[4]
                     denominator = bands[1] + bands[4]
                 case 'LANDSAT_8' | 'LANDSAT_9':
@@ -78,7 +78,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
             # https://doi.org/10.1016/j.rse.2013.08.029
             # Calculate Automated Water Extraction Index (AWEI) (no shadow version)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
+                case 'LANDSAT_5' | 'LANDSAT_7':
                     index_value = 4 * bands[1] - 0.25 * bands[3] - 4 * bands[4] + 2.75 * bands[5]
                     result = np.where(effective_region, index_value, np.inf)
                 case 'LANDSAT_8' | 'LANDSAT_9':
@@ -90,7 +90,7 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
         case 'AWEI-sh':
             # Calculate Automated Water Extraction Index (AWEI) (shadow version)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
+                case 'LANDSAT_5' | 'LANDSAT_7':
                     index_value = bands[0] + 2.5 * bands[1] - 1.5 * bands[3] - 1.5 * bands[4] - 0.25 * bands[5]
                     result = np.where(effective_region, index_value, np.inf)
                 case 'LANDSAT_8' | 'LANDSAT_9':
@@ -99,10 +99,23 @@ def water_index(bands: Sequence[np.ndarray], index: str, dataset_type: str, effe
                 case _:
                     raise RuntimeError('Unknown dataset type!')
 
+        case 'WI2015':
+            # http://dx.doi.org/10.1016/j.rse.2015.12.055
+            # Calculate 2015 water index (WI2015)
+            match dataset_type:
+                case 'LANDSAT_5' | 'LANDSAT_7':
+                    index_value = 1.7204 + 171 * bands[1] + 3 * bands[2] - 70 * bands[3] - 45 * bands[4] - 71 * bands[5]
+                    result = np.where(effective_region, index_value, np.inf)
+                case 'LANDSAT_8' | 'LANDSAT_9':
+                    index_value = 1.7204 + 171 * bands[2] + 3 * bands[3] - 70 * bands[4] - 45 * bands[5] - 71 * bands[6]
+                    result = np.where(effective_region, index_value, np.inf)
+                case _:
+                    raise RuntimeError('Unknown dataset type!')
+
         case 'MyDWI':
             # Calculate My Difference Water Index (MyDWI)
             match dataset_type:
-                case 'LANDSAT_5' | 'Landsat7' | 'LANDSAT_7':
+                case 'LANDSAT_5' | 'LANDSAT_7':
                     numerate = bands[0] + bands[1] - bands[3] - bands[4] - bands[5]
                     denominator = bands[0] + bands[1] + bands[3] + bands[4] + bands[5]
                 case 'LANDSAT_8' | 'LANDSAT_9':
@@ -170,7 +183,7 @@ def saliency_evaluation(image: np.ndarray, value: np.ndarray, mask: np.ndarray, 
     # Intersection
     mask_value = np.logical_and(value, mask)
     # Sum the elements equal to 'True'
-    num2 = np.sum(mask_value)  # TP+FN
+    tp_plus_fn = np.sum(mask_value)  # TP+FN
 
     result_list = []
     for threshold in np.arange(threshold_range[0], threshold_range[1], step_size):
@@ -182,17 +195,16 @@ def saliency_evaluation(image: np.ndarray, value: np.ndarray, mask: np.ndarray, 
         intersect_result = np.logical_and(mask_image, mask_value)
 
         # Sum the elements equal to 'True'
-        num0 = np.sum(intersect_result)  # TP
-        num1 = np.sum(mask_image)  # TP+FP
+        tp = np.sum(intersect_result)  # TP
+        tp_plus_fp = np.sum(mask_image)  # TP+FP
 
         if debug_print_flag:
-            print('num0 = ', num0)
-            print('num1 = ', num1)
-            print('num2 = ', num2)
+            print('TP = ', tp)
+            print('TP + FP = ', tp_plus_fp)
+            print('TP + FN = ', tp_plus_fn)
 
-        tp = num0
-        fp = num1 - num0
-        fn = num2 - num0
+        fp = tp_plus_fp - tp
+        fn = tp_plus_fn - tp
 
         precision = np.divide(tp, tp + fp, where=((tp + fp) != 0))
         recall = np.divide(tp, tp + fn, where=((tp + fn) != 0))
@@ -209,20 +221,20 @@ def saliency_evaluation(image: np.ndarray, value: np.ndarray, mask: np.ndarray, 
                 # https://doi.org/10.24963/ijcai.2018/97
                 # https://github.com/DengPingFan/E-measure
                 element_count = np.sum(mask)
-                if num2 == element_count:
-                    enhanced_matrix = 1.0 - mask_image
-                elif num2 == 0:
+                if tp_plus_fn == element_count:
+                    enhanced_matrix = True - mask_image
+                elif tp_plus_fn == 0:
                     enhanced_matrix = mask_image
                 else:
-                    mean_image = num1 / element_count
-                    mean_value = num2 / element_count
-                    align_image = np.subtract(mask_image, mean_image)
-                    align_value = np.subtract(mask_value, mean_value)
-                    numerate = np.multiply(2 * align_image, align_value)
-                    denominator = (np.multiply(align_image, align_image) + np.multiply(align_value, align_value) +
+                    mean_image = tp_plus_fp / element_count
+                    mean_value = tp_plus_fn / element_count
+                    align_image = mask_image - mean_image
+                    align_value = mask_value - mean_value
+                    numerate = 2 * align_image * align_value
+                    denominator = (align_image * align_image + align_value * align_value +
                                    np.finfo(runtime_data_type).eps)
-                    align_matrix = np.divide(numerate, denominator)
-                    enhanced_matrix = np.divide(np.multiply(align_matrix + 1, align_matrix + 1), 4)
+                    align_matrix = numerate / denominator
+                    enhanced_matrix = (align_matrix + 1) * (align_matrix + 1) / 4
 
                 measure = np.sum(enhanced_matrix) / (element_count - 1 + np.finfo(runtime_data_type).eps)
 
@@ -272,8 +284,8 @@ def OTSU(gray_img: np.ndarray, effective_region: np.ndarray[np.bool_], step_size
         # foreground / (foreground + background)
         w0[i] = np.sum(gray_level0_position) / effective_count
         # Mean of foreground and background
-        gray_level0[i] = np.mean(gray_img[gray_level0_position])
-        gray_level1[i] = np.mean(gray_img[gray_level1_position])
+        gray_level0[i] = np.mean(gray_img[gray_level0_position]) if w0[i] != 0 else 0
+        gray_level1[i] = np.mean(gray_img[gray_level1_position]) if w0[i] != 1 else 0
         i += 1
 
     # background / (foreground + background)
